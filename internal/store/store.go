@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS buckets (
 
 // Store is a SQLite-backed bucket store. It is safe for concurrent use.
 type Store struct {
-	db *sql.DB
+	db  *sql.DB
+	now func() time.Time
 }
 
 // Open opens (creating if needed) the database at path.
@@ -41,7 +42,7 @@ func Open(path string) (*Store, error) {
 			return nil, fmt.Errorf("init %s: %w", path, err)
 		}
 	}
-	return &Store{db: db}, nil
+	return &Store{db: db, now: time.Now}, nil
 }
 
 func (s *Store) Close() error { return s.db.Close() }
@@ -69,6 +70,8 @@ const MaxPoints = 3000
 
 // Aggregate groups the buckets in [from, to) into points of granularity g,
 // with boundaries in loc. Every point in the range is returned, including empty ones.
+// The minute still in progress is left out: its flags can still change, and
+// counting it can briefly show screen-on time without the matching active time.
 func (s *Store) Aggregate(from, to time.Time, g Granularity, loc *time.Location) ([]Point, error) {
 	if !to.After(from) {
 		return nil, fmt.Errorf("empty range")
@@ -81,8 +84,12 @@ func (s *Store) Aggregate(from, to time.Time, g Granularity, loc *time.Location)
 		points = append(points, Point{Start: b})
 	}
 
+	until := to
+	if current := s.now().Truncate(time.Minute); current.Before(until) {
+		until = current
+	}
 	rows, err := s.db.Query(`SELECT start, active, screen_on FROM buckets
-		WHERE start >= ? AND start < ? ORDER BY start`, from.Unix(), to.Unix())
+		WHERE start >= ? AND start < ? ORDER BY start`, from.Unix(), until.Unix())
 	if err != nil {
 		return nil, err
 	}

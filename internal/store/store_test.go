@@ -15,6 +15,8 @@ func openTemp(t *testing.T) *Store {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { s.Close() })
+	// Tests use fixed dates, so put "now" after all of them.
+	s.now = func() time.Time { return time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC) }
 	return s
 }
 
@@ -50,6 +52,23 @@ func TestMarkNeverClearsFlags(t *testing.T) {
 	}
 	if len(pts) != 1 || pts[0].ActiveMin != 1 || pts[0].ScreenMin != 1 {
 		t.Fatalf("got %+v", pts)
+	}
+}
+
+func TestAggregateSkipsMinuteInProgress(t *testing.T) {
+	s := openTemp(t)
+	hour := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	markRange(t, s, hour, hour.Add(5*time.Minute), true, true)
+	// 10:04 is still running: screen on, no input seen yet.
+	s.Mark(hour.Add(4*time.Minute).Unix(), false, true)
+	s.now = func() time.Time { return hour.Add(4*time.Minute + 20*time.Second) }
+
+	pts, err := s.Aggregate(hour, hour.Add(time.Hour), Hour, time.UTC)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pts) != 1 || pts[0].ActiveMin != 4 || pts[0].ScreenMin != 4 {
+		t.Fatalf("got %+v, want 4 active and 4 screen-on minutes", pts)
 	}
 }
 

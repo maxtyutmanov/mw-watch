@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mw-watch</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>mw-watch</h1>
+      <p class="sub">Active and screen-on time on this computer. The data stays on this machine.</p>
+    </header>
+
+    <section class="controls" aria-label="Range and step">
+      <div class="presets" role="group" aria-label="Range">
+        <button type="button" data-preset="today">Today</button>
+        <button type="button" data-preset="yesterday">Yesterday</button>
+        <button type="button" data-preset="7d">7 days</button>
+        <button type="button" data-preset="30d">30 days</button>
+        <button type="button" data-preset="12mo">12 months</button>
+      </div>
+      <div class="fields">
+        <label>From <input type="date" id="from"></label>
+        <label>To <input type="date" id="to"></label>
+        <label>Step
+          <select id="granularity">
+            <option value="1m">1 minute</option>
+            <option value="5m">5 minutes</option>
+            <option value="15m">15 minutes</option>
+            <option value="1h">1 hour</option>
+            <option value="1d">1 day</option>
+            <option value="1w">1 week</option>
+            <option value="1mo">1 month</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="tiles">
+      <div class="tile">
+        <div class="label"><span class="swatch swatch-active"></span>Active</div>
+        <div class="value" id="total-active">–</div>
+      </div>
+      <div class="tile">
+        <div class="label"><span class="swatch swatch-screen"></span>Screen on</div>
+        <div class="value" id="total-screen">–</div>
+      </div>
+      <div class="tile">
+        <div class="label">Active share of screen-on time</div>
+        <div class="value" id="share">–</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div id="chart" class="chart" role="img" aria-label="Active and screen-on time chart"></div>
+      <div id="tooltip" class="tooltip" hidden></div>
+      <p id="error" class="error" hidden></p>
+    </section>
+  </main>
+</body>
+</html>
